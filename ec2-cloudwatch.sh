@@ -34,7 +34,6 @@ get_timestamp() {
     fi
 }
 
-
 # Function to find snapshots from unused EBS volumes
 find_snapshots_from_unused_ebs() {
     local region=$1
@@ -73,7 +72,7 @@ get_ebs_metrics() {
     local attachment_time=$7
     local instance_id=$8
     
-    # Get read operations
+    # Get read operations (daily maximum)
     aws cloudwatch get-metric-statistics \
         --region "$region" \
         --namespace AWS/EBS \
@@ -91,7 +90,7 @@ get_ebs_metrics() {
             --arg instance_id "$instance_id" \
             '.Datapoints[] | [$region, $volume_id, $state, $attachment_time, $instance_id, .Timestamp, .Maximum, null] | @csv' >> ebs_volume_metrics.csv
     
-    # Get write operations
+    # Get write operations (daily maximum)
     aws cloudwatch get-metric-statistics \
         --region "$region" \
         --namespace AWS/EBS \
@@ -156,7 +155,7 @@ find_unused_eips() {
 # Calculate timestamps
 END_TIME=$(get_timestamp)
 START_90D=$(get_timestamp "-90d")
-PERIOD=2592000
+PERIOD=86400  # 86400 seconds = 1 day
 
 echo "END_TIME: $END_TIME"
 echo "START_90D: $START_90D"
@@ -199,3 +198,5 @@ for region in "${REGIONS[@]}"; do
     # Find unused Elastic IPs
     find_unused_eips "$region"
 done
+
+echo "Data collection complete. Check the CSV files for results."

@@ -11,7 +11,13 @@ get_timestamp() {
     if [ -z "$offset" ]; then
         date -u +"%Y-%m-%dT%H:%M:%SZ"
     else
-        date -u "-v$offset" +"%Y-%m-%dT%H:%M:%SZ"
+        # For macOS
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            date -u -v"$offset" +"%Y-%m-%dT%H:%M:%SZ"
+        # For Linux
+        else
+            date -u -d "$offset" +"%Y-%m-%dT%H:%M:%SZ"
+        fi
     fi
 }
 

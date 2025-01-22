@@ -9,17 +9,14 @@ REGIONS=(
 get_timestamp() {
     local offset=$1
     if [ -z "$offset" ]; then
-        date -u +"%Y-%m-%dT%H:%M:%SZ"
+        python3 -c 'from datetime import datetime; print(datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))'
     else
-        # For macOS
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            date -u -v"$offset" +"%Y-%m-%dT%H:%M:%SZ"
-        # For Linux
-        else
-            date -u -d "$offset" +"%Y-%m-%dT%H:%M:%SZ"
-        fi
+        # Extract number of days from the offset (removes the 'd' suffix)
+        days=${offset%d}
+        python3 -c "from datetime import datetime, timedelta; print((datetime.utcnow() + timedelta(days=$days)).strftime('%Y-%m-%dT%H:%M:%SZ'))"
     fi
 }
+
 
 # Function to find snapshots from unused EBS volumes
 find_snapshots_from_unused_ebs() {

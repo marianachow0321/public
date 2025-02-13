@@ -34,6 +34,20 @@ get_timestamp() {
     fi
 }
 
+# Function to list EBS volume details
+list_ebs_volumes() {
+    local region=$1
+    
+    echo "Listing EBS volumes in $region..."
+    aws ec2 describe-volumes \
+        --region "$region" \
+        --query 'Volumes[].[VolumeId,VolumeType,Iops]' \
+        --output text | \
+        while IFS=$'\t' read -r volume_id volume_type iops; do
+            echo "$region,$volume_id,$volume_type,$iops" >> ebs_volume_details.csv
+        done
+}
+
 # Function to find snapshots from unused EBS volumes
 find_snapshots_from_unused_ebs() {
     local region=$1
@@ -161,6 +175,7 @@ echo "END_TIME: $END_TIME"
 echo "START_90D: $START_90D"
 
 # Create CSV headers
+echo "region,volume_id,volume_type,iops" > ebs_volume_details.csv
 echo "region,volume_id,state,attachment_time,instance_id,timestamp,read_ops,write_ops" > ebs_volume_metrics.csv
 echo "region,instance_id,instance_type,platform,platform_details,timestamp,average_pct" > ec2_cpu_metrics.csv
 echo "region,snapshot_id,volume_id,start_time,description" > unused_ebs_snapshots.csv
@@ -169,6 +184,9 @@ echo "region,public_ip,allocation_id" > unused_eips.csv
 # Loop through each region
 for region in "${REGIONS[@]}"; do
     echo "Processing region: $region"
+    
+    # List EBS volumes
+    list_ebs_volumes "$region"
     
     # Get instance IDs and types
     aws ec2 describe-instances \
